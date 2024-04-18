@@ -273,7 +273,7 @@ def rdm1x1_sl(coord, state, env, operator=None, sym_pos_def=False, force_cpu=Fal
     who="rdm1x1_sl"
     C1, C2, C3, C4, T1, T2, T3, T4= env.get_site_env_t(coord,state)
     a= state.site(coord)
-    a_op= a if not operator else torch.tensordot(op,a,([1],[0]))
+    a_op= a if operator is None else torch.tensordot(operator,a,([1],[0]))
     t= C1, C2, C3, C4, T1, T2, T3, T4, a, a_op
     if force_cpu:
         t=(x.cpu() for x in t)
