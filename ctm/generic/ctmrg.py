@@ -399,9 +399,13 @@ def absorb_truncate_CTM_MOVE_UP_c(*tensors):
         #        --(2)9 9-----a*--11 11(2)-- 
         #                  |  | 
         #                  5  6
+        t0_net= time.perf_counter()
         nT= torch.einsum(T,[0,1,2,3],Pt2,[0,8,9,4],A,[12,1,8,5,10],A.conj(),[12,2,9,6,11],\
             P1,[3,10,11,7],[4,5,6,7])
+        t1_net= time.perf_counter()
+        print("net = ", t1_net-t0_net)
         nT= nT.view(nT.size(0),nT.size(1)*nT.size(2),nT.size(3))
+        
 
     # Assign new C,T 
     #
