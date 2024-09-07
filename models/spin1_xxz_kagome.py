@@ -90,7 +90,7 @@ class S1_KAGOME_XXZ():
             }
 
 
-    # Energy terms
+    # Energy terms for i"PESS"
     def energy_triangle_dn(self, state, env, force_cpu=False):
         e_dn, norm = rdm_kagome.rdm2x2_dn_triangle_with_operator(\
             (0, 0), state, env, self.h_triangle, force_cpu=force_cpu)
@@ -110,7 +110,6 @@ class S1_KAGOME_XXZ():
             return(self.j2*(vNNN[0]+vNNN[1]+vNNN[2]+vNNN[3]+vNNN[4]+vNNN[5]))
 
     # Observables
-
     def P_dn(self, state, env, force_cpu=False):
         vP_dn= rdm_kagome.rdm2x2_dn_triangle_with_operator((0, 0), state, env,\
             operator=permute_triangle, force_cpu=force_cpu)
@@ -167,44 +166,45 @@ class S1_KAGOME_XXZ():
         :rtype: list[float], list[str]
         """
         # norm_wf = rdm.rdm1x1((0, 0), state, env, operator=self.Id3_t)
+        norm_wf = torch.einsum('ab,ab',rdm.rdm1x1((0, 0), state, env, operator=None), self.Id3_t)
         obs= {"e_t_dn": 0, "e_t_up": 0, "m_0": 0, "m_1": 0, "m_2": 0}
-        # with torch.no_grad():
-        #     e_t_dn= self.energy_triangle_dn(state, env, force_cpu=force_cpu)
-        #     e_t_up= self.energy_triangle_up(state, env, force_cpu=force_cpu)
-        #     obs["e_t_dn"]= e_t_dn
-        #     obs["e_t_up"]= e_t_up
+        with torch.no_grad():
+            e_t_dn= self.energy_triangle_dn(state, env, force_cpu=force_cpu)
+            e_t_up= self.energy_triangle_up(state, env, force_cpu=force_cpu)
+            obs["e_t_dn"]= e_t_dn.item()
+            obs["e_t_up"]= e_t_up.item()
 
-        #     for label in self.obs_ops.keys():
-        #         op= self.obs_ops[label].view(self.phys_dim**3, self.phys_dim**3)
-        #         obs_val= rdm.rdm1x1((0, 0), state, env, operator=op) / norm_wf
-        #         obs[f"{label}"]= obs_val #_cast_to_real(obs_val)
-        #         # print(obs_val)
+            for label in self.obs_ops.keys():
+                op= self.obs_ops[label].view(self.phys_dim**3, self.phys_dim**3)
+                # obs_val= rdm.rdm1x1((0, 0), state, env, operator=op) / norm_wf
+                obs_val= torch.einsum('ab,ab',rdm.rdm1x1((0, 0), state, env, operator=None), op) / norm_wf
+                obs[f"{label}"]= obs_val #_cast_to_real(obs_val)
 
-        #     for i in range(3):
-        #         obs[f"m_{i}"]= sqrt(_cast_to_real(
-        #             obs[f"sz_{i}"]**2\
-        #             +0.25*(obs[f"sp_{i}"] + obs[f"sm_{i}"])**2
-        #             +0.25*( -1.0j*(obs[f"sp_{i}"] - obs[f"sm_{i}"]) )**2
-        #             )
-        #         )
+            for i in range(3):
+                obs[f"m_{i}"]= sqrt(_cast_to_real(
+                    obs[f"sz_{i}"]**2\
+                    +0.25*(obs[f"sp_{i}"] + obs[f"sm_{i}"])**2
+                    +0.25*( -1.0j*(obs[f"sp_{i}"] - obs[f"sm_{i}"]) )**2
+                    ).item()
+                )
  
-        #     # nn S.S pattern
-        #     SS_dn_01= rdm_kagome.rdm2x2_dn_triangle_with_operator(\
-        #         (0, 0), state, env, self.SSnnId, force_cpu=force_cpu)
-        #     SS_dn_12= rdm_kagome.rdm2x2_dn_triangle_with_operator(\
-        #         (0, 0), state, env, self.SSnnId.permute(2,1,0, 5,4,3).contiguous(),\
-        #         force_cpu=force_cpu)
-        #     SS_dn_02= rdm_kagome.rdm2x2_dn_triangle_with_operator(\
-        #         (0, 0), state, env, self.SSnnId.permute(0,2,1, 3,5,4).contiguous(),\
-        #         force_cpu=force_cpu)
-        #     rdm_up= rdm_kagome.rdm2x2_up_triangle_open(\
-        #         (0, 0), state, env, force_cpu=force_cpu)
-        #     SS_up_01= torch.einsum('ijkmno,mnoijk', rdm_up, self.SSnnId )
-        #     SS_up_12= torch.einsum('ijkmno,mnoijk', rdm_up, self.SSnnId.permute(2,1,0, 5,4,3) )
-        #     SS_up_02= torch.einsum('ijkmno,mnoijk', rdm_up, self.SSnnId.permute(0,2,1, 3,5,4) )
+            # nn S.S pattern
+            SS_dn_01, norm = rdm_kagome.rdm2x2_dn_triangle_with_operator(\
+                (0, 0), state, env, self.SSnnId, force_cpu=force_cpu)
+            SS_dn_12, norm = rdm_kagome.rdm2x2_dn_triangle_with_operator(\
+                (0, 0), state, env, self.SSnnId.permute(2,1,0, 5,4,3).contiguous(),\
+                force_cpu=force_cpu)
+            SS_dn_02, norm = rdm_kagome.rdm2x2_dn_triangle_with_operator(\
+                (0, 0), state, env, self.SSnnId.permute(0,2,1, 3,5,4).contiguous(),\
+                force_cpu=force_cpu)
+            rdm_up= rdm_kagome.rdm2x2_up_triangle_open(\
+                (0, 0), state, env, force_cpu=force_cpu)
+            SS_up_01= torch.einsum('ijkmno,mnoijk', rdm_up, self.SSnnId )
+            SS_up_12= torch.einsum('ijkmno,mnoijk', rdm_up, self.SSnnId.permute(2,1,0, 5,4,3) )
+            SS_up_02= torch.einsum('ijkmno,mnoijk', rdm_up, self.SSnnId.permute(0,2,1, 3,5,4) )
 
-        #     obs.update({"SS_dn_01": SS_dn_01, "SS_dn_12": SS_dn_12, "SS_dn_02": SS_dn_02,\
-        #         "SS_up_01": SS_up_01, "SS_up_12": SS_up_12, "SS_up_02": SS_up_02 })
+            obs.update({"SS_dn_01": SS_dn_01.item(), "SS_dn_12": SS_dn_12.item(), "SS_dn_02": SS_dn_02.item(),\
+                "SS_up_01": SS_up_01.item(), "SS_up_12": SS_up_12.item(), "SS_up_02": SS_up_02.item() })
 
         # prepare list with labels and values
         return list(obs.values()), list(obs.keys())

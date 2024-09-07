@@ -246,10 +246,10 @@ def ctm_get_projectors_from_matrices(R, Rt, chi, ctm_args=cfg.ctm_args, \
         M = checkpoint(mm, transpose(R), Rt)
     else:
         M = mm(transpose(R), Rt)
-    t0_net= time.perf_counter()
+    # t0_net= time.perf_counter()
     U, S, V = truncated_svd(M, chi) # M = USV^{T}
-    t1_net= time.perf_counter()
-    print("svd = ", t1_net-t0_net)    
+    # t1_net= time.perf_counter()
+    # print("svd = ", t1_net-t0_net)    
 
     S_nz= S[S/S[0] > ctm_args.projector_svd_reltol]
     S_sqrt= S*0
